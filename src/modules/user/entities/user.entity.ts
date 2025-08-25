@@ -1,6 +1,7 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 import { EntityNames } from '../../../common/enums/entity.enum';
 import { BaseEntity } from '../../../common/abstracts/base.entity';
+import { OtpEntity } from './otp.entity';
 
 @Entity(EntityNames.User)
 export class UserEntity extends BaseEntity {
@@ -15,4 +16,11 @@ export class UserEntity extends BaseEntity {
 
   @Column({ nullable: true })
   password: string;
+
+  @Column({ nullable: true })
+  otpId: number;
+
+  @OneToOne(() => OtpEntity, (otp) => otp.user, { nullable: true })
+  @JoinColumn()
+  otp: OtpEntity;
 }
