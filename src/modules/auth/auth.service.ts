@@ -18,6 +18,10 @@ import {
 } from '../../common/enums/message.enum';
 import { OtpEntity } from '../user/entities/otp.entity';
 import { randomInt } from 'crypto';
+import { TokenService } from './tokens.service';
+import { Response } from 'express';
+import { CookieKeys } from '../../common/enums/cookie.enum';
+import { AuthResponse } from './types/response';
 
 @Injectable()
 export class AuthService {
@@ -28,20 +32,27 @@ export class AuthService {
     private profileRepository: Repository<ProfileEntity>,
     @InjectRepository(OtpEntity)
     private otpRepository: Repository<OtpEntity>,
+    private tokenService: TokenService,
   ) {}
-  userExistence(authDto: AuthDto) {
+  async userExistence(authDto: AuthDto, res: Response) {
     const { type, method, username } = authDto;
+
+    let result: AuthResponse;
 
     switch (type) {
       case AuthType.Login:
-        return this.login(method, username);
+        result = await this.login(method, username);
+        break;
 
       case AuthType.Register:
-        return this.register(method, username);
+        result = await this.register(method, username);
+        break;
 
       default:
         throw new UnauthorizedException();
     }
+
+    return this.sendResponse(res, result);
   }
 
   async login(method: AuthMethod, username: string) {
@@ -52,8 +63,11 @@ export class AuthService {
 
     const otp = await this.saveOtp(user.id);
 
+    const otpToken = this.tokenService.generateOtpToken({ userId: user.id });
+
     return {
       code: otp.code,
+      token: otpToken,
     };
   }
 
@@ -63,17 +77,38 @@ export class AuthService {
     let user = await this.checkExistUser(method, validUsername);
     if (user) throw new ConflictException(AuthMessage.AlreadyExistAccount);
 
+    if (method === AuthMethod.Username) {
+      throw new BadRequestException(BadRequestMessage.InvalidRegisterData);
+    }
+
     user = this.userRepository.create({
       [method]: validUsername,
     });
 
     user = await this.userRepository.save(user);
 
+    user.username = `m_${user.id}`;
+    await this.userRepository.save(user);
+
     const otp = await this.saveOtp(user.id);
+
+    const otpToken = this.tokenService.generateOtpToken({ userId: user.id });
 
     return {
       code: otp.code,
+      token: otpToken,
     };
+  }
+
+  sendResponse(res: Response, result: AuthResponse) {
+    const { token, code } = result;
+
+    res.cookie(CookieKeys.Otp, token, { httpOnly: true });
+
+    res.json({
+      message: 'OK',
+      code,
+    });
   }
 
   async saveOtp(userId: number) {
