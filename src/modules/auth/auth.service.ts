@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
+  Scope,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthDto } from './dto/auth.dto';
@@ -19,11 +21,12 @@ import {
 import { OtpEntity } from '../user/entities/otp.entity';
 import { randomInt } from 'crypto';
 import { TokenService } from './tokens.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { CookieKeys } from '../../common/enums/cookie.enum';
 import { AuthResponse } from './types/response';
+import { REQUEST } from '@nestjs/core';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
@@ -32,6 +35,7 @@ export class AuthService {
     private profileRepository: Repository<ProfileEntity>,
     @InjectRepository(OtpEntity)
     private otpRepository: Repository<OtpEntity>,
+    @Inject(REQUEST) private request: Request,
     private tokenService: TokenService,
   ) {}
   async userExistence(authDto: AuthDto, res: Response) {
@@ -103,7 +107,10 @@ export class AuthService {
   sendResponse(res: Response, result: AuthResponse) {
     const { token, code } = result;
 
-    res.cookie(CookieKeys.Otp, token, { httpOnly: true });
+    res.cookie(CookieKeys.Otp, token, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 60 * 2),
+    });
 
     res.json({
       message: 'OK',
@@ -134,6 +141,29 @@ export class AuthService {
     }
 
     return otp;
+  }
+
+  async checkOtp(code: string) {
+    const token = this.request.cookies?.[CookieKeys.Otp] as string;
+    if (!token) throw new UnauthorizedException(AuthMessage.ExpiredCode);
+
+    const { userId } = this.tokenService.verifyOtpToken(token);
+
+    const otp = await this.otpRepository.findOneBy({ userId });
+    if (!otp) throw new UnauthorizedException(AuthMessage.TryAgain);
+
+    const now = new Date();
+    if (otp.expireIn < now)
+      throw new UnauthorizedException(AuthMessage.ExpiredCode);
+
+    if (otp.code !== code)
+      throw new UnauthorizedException(AuthMessage.IncorrectOtpCode);
+
+    const accessToken = this.tokenService.generateAccessToken({ userId });
+
+    return {
+      accessToken,
+    };
   }
 
   async checkExistUser(method: AuthMethod, username: string) {
@@ -168,5 +198,16 @@ export class AuthService {
       default:
         throw new UnauthorizedException('username field is invalid');
     }
+  }
+
+  async validateAccessToken(token: string) {
+    const { userId } = this.tokenService.verifyAccessToken(token);
+
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) {
+      throw new UnauthorizedException(AuthMessage.LoginAgain);
+    }
+
+    return user;
   }
 }
