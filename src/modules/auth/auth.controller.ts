@@ -13,6 +13,7 @@ import { AuthDto, CheckOtpDto } from './dto/auth.dto';
 import { SwaggerConsumes } from '../../common/enums/swagger-consumes.enum';
 import { Request, Response } from 'express';
 import { AuthGuard } from './guards/auth.guard';
+import { SwaggerAuthName } from '../../common/enums/swagger-auth-name.enum';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -32,7 +33,7 @@ export class AuthController {
   }
 
   @Get('check-login')
-  @ApiBearerAuth('Authorization')
+  @ApiBearerAuth(SwaggerAuthName.Authorization)
   @UseGuards(AuthGuard)
   checkLogin(@Req() req: Request) {
     return req.user;

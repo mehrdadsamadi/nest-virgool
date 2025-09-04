@@ -1,13 +1,14 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { SecuritySchemeObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
+import { SwaggerAuthName } from '../common/enums/swagger-auth-name.enum';
 
 export function swaggerConfigInit(app: INestApplication): void {
   const document = new DocumentBuilder()
     .setTitle('Virgool API')
     .setDescription('Virgool API backend')
     .setVersion('1.0')
-    .addBearerAuth(SwaggerAuthConfig(), 'Authorization')
+    .addBearerAuth(SwaggerAuthConfig(), SwaggerAuthName.Authorization)
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, document);

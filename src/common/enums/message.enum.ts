@@ -13,3 +13,9 @@ export enum AuthMessage {
 }
 export enum NotFoundMessage {}
 export enum ValidationMessage {}
+export enum PublicMessage {
+  Created = 'با موفقیت ایجاد شد.',
+}
+export enum ConflictMessage {
+  Category = 'عنوان دسته بندی قبلا ثبت شده است.',
+}
