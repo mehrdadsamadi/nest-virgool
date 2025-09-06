@@ -6,16 +6,25 @@ import {
   Param,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { CreateProfileDto } from './dto/create-profile.dto';
+import { SwaggerConsumes } from '../../common/enums/swagger-consumes.enum';
 
 @Controller('user')
 @ApiTags('User')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Put('/profile')
+  @ApiConsumes(SwaggerConsumes.Multipart)
+  changeProfile(@Body() profileDto: CreateProfileDto) {
+    return this.userService.changeProfile(profileDto);
+  }
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {

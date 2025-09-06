@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 import { EntityNames } from '../../../common/enums/entity.enum';
 import { BaseEntity } from '../../../common/abstracts/base.entity';
 import { OtpEntity } from './otp.entity';
+import { ProfileEntity } from './profile.entity';
 
 @Entity(EntityNames.User)
 export class UserEntity extends BaseEntity {
@@ -23,4 +24,11 @@ export class UserEntity extends BaseEntity {
   @OneToOne(() => OtpEntity, (otp) => otp.user, { nullable: true })
   @JoinColumn()
   otp: OtpEntity;
+
+  @Column({ nullable: true })
+  profileId: number;
+
+  @OneToOne(() => ProfileEntity, (profile) => profile.user, { nullable: true })
+  @JoinColumn()
+  profile: ProfileEntity;
 }
