@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -34,20 +35,21 @@ export class CategoryController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.categoryService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.categoryService.findOne(id);
   }
 
   @Patch(':id')
+  @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    return this.categoryService.update(+id, updateCategoryDto);
+    return this.categoryService.update(id, updateCategoryDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.categoryService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.categoryService.remove(id);
   }
 }

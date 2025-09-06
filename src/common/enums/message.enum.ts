@@ -11,10 +11,15 @@ export enum AuthMessage {
   IncorrectOtpCode = 'کد وارد شده صحیح نمیباشد.',
   RequiredLogin = 'وارد حساب کاربری خود شوید.',
 }
-export enum NotFoundMessage {}
+export enum NotFoundMessage {
+  NotFound = 'موردی یافت نشد.',
+  Category = 'دسته بندی یافت نشد.',
+}
 export enum ValidationMessage {}
 export enum PublicMessage {
   Created = 'با موفقیت ایجاد شد.',
+  Updated = 'با موفقیت ویرایش شد.',
+  Deleted = 'با موفقیت حذف شد.',
 }
 export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',
