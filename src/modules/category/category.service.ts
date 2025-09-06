@@ -8,6 +8,11 @@ import {
   ConflictMessage,
   PublicMessage,
 } from '../../common/enums/message.enum';
+import { PaginationDto } from '../../common/dtos/pagination.dto';
+import {
+  paginationGenerator,
+  paginationSolver,
+} from '../../common/utils/pagination.util';
 
 @Injectable()
 export class CategoryService {
@@ -42,8 +47,19 @@ export class CategoryService {
     return title;
   }
 
-  findAll() {
-    return this.categoryRepository.findBy({});
+  async findAll(paginationDto: PaginationDto) {
+    const { limit, skip, page } = paginationSolver(paginationDto);
+
+    const [categories, count] = await this.categoryRepository.findAndCount({
+      where: {},
+      skip,
+      take: limit,
+    });
+
+    return {
+      categories,
+      pagination: paginationGenerator(count, page, limit),
+    };
   }
 
   findOne(id: number) {
