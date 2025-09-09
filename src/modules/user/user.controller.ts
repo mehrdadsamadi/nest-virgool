@@ -1,53 +1,51 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
-  Param,
-  Patch,
-  Post,
   Put,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { SwaggerConsumes } from '../../common/enums/swagger-consumes.enum';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { multerStorage } from '../../common/utils/multer.util';
+import { SwaggerAuthName } from '../../common/enums/swagger-auth-name.enum';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { ProfileImages } from './types/files';
+import { UploadedOptionalFiles } from '../../common/decorators/upload-file.decorator';
 
 @Controller('user')
 @ApiTags('User')
+@ApiBearerAuth(SwaggerAuthName.Authorization)
+@UseGuards(AuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Put('/profile')
   @ApiConsumes(SwaggerConsumes.Multipart)
-  changeProfile(@Body() profileDto: CreateProfileDto) {
-    return this.userService.changeProfile(profileDto);
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'bgImage', maxCount: 1 },
+        { name: 'imageProfile', maxCount: 1 },
+      ],
+      {
+        storage: multerStorage('user-profile'),
+      },
+    ),
+  )
+  changeProfile(
+    @UploadedOptionalFiles() files: ProfileImages,
+    @Body() profileDto: CreateProfileDto,
+  ) {
+    return this.userService.changeProfile(files, profileDto);
   }
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.userService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @Get('/profile')
+  profile() {
+    return this.userService.profile();
   }
 }

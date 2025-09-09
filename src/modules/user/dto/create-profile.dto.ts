@@ -1,13 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, Length } from 'class-validator';
+import { IsEnum, IsOptional, Length } from 'class-validator';
 import { Gender } from '../enum/gender.enum';
 
 export class CreateProfileDto {
   @ApiPropertyOptional()
-  @Length(10, 100)
+  @IsOptional()
+  @Length(3, 10)
   nickName: string;
 
   @ApiPropertyOptional()
+  @IsOptional()
   @Length(10, 200)
   bio: string;
 
@@ -18,6 +20,7 @@ export class CreateProfileDto {
   bgImage: string;
 
   @ApiPropertyOptional({ enum: Gender })
+  @IsOptional()
   @IsEnum(Gender)
   gender: string;
 

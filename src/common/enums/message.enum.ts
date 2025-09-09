@@ -15,7 +15,9 @@ export enum NotFoundMessage {
   NotFound = 'موردی یافت نشد.',
   Category = 'دسته بندی یافت نشد.',
 }
-export enum ValidationMessage {}
+export enum ValidationMessage {
+  InvalidImageFormat = 'فرمت تصویر بارگذاری شده باید از نوع jpg , png باشد.',
+}
 export enum PublicMessage {
   Created = 'با موفقیت ایجاد شد.',
   Updated = 'با موفقیت ویرایش شد.',
