@@ -17,6 +17,7 @@ import { ProfileEntity } from '../user/entities/profile.entity';
 import {
   AuthMessage,
   BadRequestMessage,
+  PublicMessage,
 } from '../../common/enums/message.enum';
 import { OtpEntity } from '../user/entities/otp.entity';
 import { randomInt } from 'crypto';
@@ -25,6 +26,7 @@ import { Request, Response } from 'express';
 import { CookieKeys } from '../../common/enums/cookie.enum';
 import { AuthResponse } from './types/response';
 import { REQUEST } from '@nestjs/core';
+import { OtpCookieOptions } from '../../common/utils/cookie.util';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService {
@@ -65,7 +67,7 @@ export class AuthService {
     const user = await this.checkExistUser(method, validUsername);
     if (!user) throw new UnauthorizedException(AuthMessage.NotFoundAccount);
 
-    const otp = await this.saveOtp(user.id);
+    const otp = await this.saveOtp(user.id, method);
 
     const otpToken = this.tokenService.generateOtpToken({ userId: user.id });
 
@@ -94,7 +96,7 @@ export class AuthService {
     user.username = `m_${user.id}`;
     await this.userRepository.save(user);
 
-    const otp = await this.saveOtp(user.id);
+    const otp = await this.saveOtp(user.id, method);
 
     const otpToken = this.tokenService.generateOtpToken({ userId: user.id });
 
@@ -107,18 +109,15 @@ export class AuthService {
   sendResponse(res: Response, result: AuthResponse) {
     const { token, code } = result;
 
-    res.cookie(CookieKeys.Otp, token, {
-      httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 60 * 2),
-    });
+    res.cookie(CookieKeys.Otp, token, OtpCookieOptions());
 
     res.json({
-      message: 'OK',
+      message: PublicMessage.SentOpt,
       code,
     });
   }
 
-  async saveOtp(userId: number) {
+  async saveOtp(userId: number, method: AuthMethod) {
     const code = randomInt(10000, 99999).toString();
 
     let existOtp = false;
@@ -130,8 +129,14 @@ export class AuthService {
       existOtp = true;
       otp.code = code;
       otp.expireIn = expireIn;
+      otp.authMethod = method;
     } else {
-      otp = this.otpRepository.create({ userId, code, expireIn });
+      otp = this.otpRepository.create({
+        userId,
+        code,
+        expireIn,
+        authMethod: method,
+      });
     }
 
     otp = await this.otpRepository.save(otp);
@@ -160,6 +165,20 @@ export class AuthService {
       throw new UnauthorizedException(AuthMessage.IncorrectOtpCode);
 
     const accessToken = this.tokenService.generateAccessToken({ userId });
+
+    let verifyQuery = {};
+
+    if (otp.authMethod === AuthMethod.Email) {
+      verifyQuery = {
+        verifyEmail: true,
+      };
+    } else if (otp.authMethod === AuthMethod.Phone) {
+      verifyQuery = {
+        verifyPhone: true,
+      };
+    }
+
+    await this.userRepository.update({ id: userId }, verifyQuery);
 
     return {
       accessToken,

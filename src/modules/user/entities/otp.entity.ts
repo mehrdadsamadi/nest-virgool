@@ -2,6 +2,7 @@ import { Column, Entity, OneToOne } from 'typeorm';
 import { EntityNames } from '../../../common/enums/entity.enum';
 import { BaseEntity } from '../../../common/abstracts/base.entity';
 import { UserEntity } from './user.entity';
+import { AuthMethod } from '../../auth/enums/method.enum';
 
 @Entity(EntityNames.Otp)
 export class OtpEntity extends BaseEntity {
@@ -10,6 +11,9 @@ export class OtpEntity extends BaseEntity {
 
   @Column()
   expireIn: Date;
+
+  @Column({ nullable: true, enum: AuthMethod })
+  authMethod: AuthMethod;
 
   @Column()
   userId: number;
