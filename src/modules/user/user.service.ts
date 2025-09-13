@@ -223,6 +223,26 @@ export class UserService {
     };
   }
 
+  async changeUsername(username: string) {
+    const { id } = this.request.user!;
+
+    const tempUser = await this.userRepository.findOneBy({ username });
+
+    if (tempUser && tempUser?.id !== id) {
+      throw new ConflictException(ConflictMessage.Username);
+    } else if (tempUser && tempUser.id == id) {
+      return {
+        message: PublicMessage.Updated,
+      };
+    }
+
+    await this.userRepository.update({ id }, { username });
+
+    return {
+      message: PublicMessage.Updated,
+    };
+  }
+
   async checkOtp(userId: number, code: string) {
     const otp = await this.otpRepository.findOneBy({ userId });
 

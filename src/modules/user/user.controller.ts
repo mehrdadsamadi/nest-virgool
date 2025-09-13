@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import {
   ChangeEmailDto,
   ChangePhoneDto,
+  ChangeUsernameDto,
   CreateProfileDto,
 } from './dto/create-profile.dto';
 import { SwaggerConsumes } from '../../common/enums/swagger-consumes.enum';
@@ -109,5 +110,11 @@ export class UserController {
   @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
   async verifyPhone(@Body() otpDto: CheckOtpDto) {
     return this.userService.verifyPhone(otpDto.code);
+  }
+
+  @Patch('/change-username')
+  @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
+  async changeUsername(@Body() usernameDto: ChangeUsernameDto) {
+    return this.userService.changeUsername(usernameDto.username);
   }
 }

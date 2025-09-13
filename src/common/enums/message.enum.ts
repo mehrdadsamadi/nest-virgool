@@ -20,6 +20,7 @@ export enum ValidationMessage {
   InvalidImageFormat = 'فرمت تصویر بارگذاری شده باید از نوع jpg , png باشد.',
   InvalidEmailFormat = 'ایمیل وارد شده صحیح نمیباشد.',
   InvalidPhoneFormat = 'شماره موبایل وارد شده صحیح نمیباشد.',
+  InvalidUsernameLength = 'نام کاربری باید بین ۳ تا ۱۰۰ کاراکتر باشد.',
 }
 export enum PublicMessage {
   Created = 'با موفقیت ایجاد شد.',
@@ -31,4 +32,5 @@ export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',
   Email = 'این ایمیل توسط شخص دیگری استفاده شده است.',
   Phone = 'این شماره موبایل توسط شخص دیگری استفاده شده است.',
+  Username = 'این نام کاربری توسط شخص دیگری استفاده شده است.',
 }
