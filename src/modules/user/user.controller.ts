@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { ChangeEmailDto, CreateProfileDto } from './dto/create-profile.dto';
+import {
+  ChangeEmailDto,
+  ChangePhoneDto,
+  CreateProfileDto,
+} from './dto/create-profile.dto';
 import { SwaggerConsumes } from '../../common/enums/swagger-consumes.enum';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerStorage } from '../../common/utils/multer.util';
@@ -80,5 +84,30 @@ export class UserController {
   @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
   async verifyEmail(@Body() otpDto: CheckOtpDto) {
     return this.userService.verifyEmail(otpDto.code);
+  }
+
+  @Patch('/change-phone')
+  @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
+  async changePhone(@Body() phoneDto: ChangePhoneDto, @Res() res: Response) {
+    const { code, token, message } = await this.userService.changePhone(
+      phoneDto.phone,
+    );
+
+    if (message) {
+      return res.json({ message });
+    }
+
+    res.cookie(CookieKeys.PhoneOtp, token, OtpCookieOptions());
+
+    res.json({
+      message: PublicMessage.SentOpt,
+      code,
+    });
+  }
+
+  @Post('/verify-phone-otp')
+  @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
+  async verifyPhone(@Body() otpDto: CheckOtpDto) {
+    return this.userService.verifyPhone(otpDto.code);
   }
 }

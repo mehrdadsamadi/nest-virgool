@@ -30,4 +30,5 @@ export enum PublicMessage {
 export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',
   Email = 'این ایمیل توسط شخص دیگری استفاده شده است.',
+  Phone = 'این شماره موبایل توسط شخص دیگری استفاده شده است.',
 }
