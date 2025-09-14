@@ -1,8 +1,12 @@
-import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 import { EntityNames } from '../../../common/enums/entity.enum';
 import { BaseEntity } from '../../../common/abstracts/base.entity';
 import { OtpEntity } from './otp.entity';
 import { ProfileEntity } from './profile.entity';
+import { BlogEntity } from '../../blog/entities/blog.entity';
+import { BlogLikesEntity } from '../../blog/entities/like.entity';
+import { BlogBookmarkEntity } from '../../blog/entities/bookmark.entity';
+import { BlogCommentEntity } from '../../blog/entities/comment.entity';
 
 @Entity(EntityNames.User)
 export class UserEntity extends BaseEntity {
@@ -43,4 +47,16 @@ export class UserEntity extends BaseEntity {
   @OneToOne(() => ProfileEntity, (profile) => profile.user, { nullable: true })
   @JoinColumn()
   profile: ProfileEntity;
+
+  @OneToMany(() => BlogEntity, (blog) => blog.author)
+  blogs: BlogEntity[];
+
+  @OneToMany(() => BlogLikesEntity, (blogLikes) => blogLikes.user)
+  blogLikes: BlogLikesEntity[];
+
+  @OneToMany(() => BlogBookmarkEntity, (blogBookmark) => blogBookmark.user)
+  blogBookmarks: BlogBookmarkEntity[];
+
+  @OneToMany(() => BlogCommentEntity, (blogComment) => blogComment.user)
+  blogComments: BlogCommentEntity[];
 }
