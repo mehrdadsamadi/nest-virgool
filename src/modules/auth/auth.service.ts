@@ -26,7 +26,7 @@ import { Request, Response } from 'express';
 import { CookieKeys } from '../../common/enums/cookie.enum';
 import { AuthResponse } from './types/response';
 import { REQUEST } from '@nestjs/core';
-import { OtpCookieOptions } from '../../common/utils/cookie.util';
+import { OtpCookieOptions } from '../../common/utils/functions.util';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService {

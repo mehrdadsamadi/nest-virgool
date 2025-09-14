@@ -13,10 +13,16 @@ export class BlogEntity extends BaseEntity {
   title: string;
 
   @Column()
-  shortDescription: string;
+  description: string;
 
   @Column()
   content: string;
+
+  @Column({ unique: true })
+  slug: string;
+
+  @Column()
+  studyTime: string;
 
   @Column({ nullable: true })
   image: string;

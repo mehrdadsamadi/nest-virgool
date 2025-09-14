@@ -26,9 +26,9 @@ import { ProfileImages } from './types/files';
 import { UploadedOptionalFiles } from '../../common/decorators/upload-file.decorator';
 import { Response } from 'express';
 import { CookieKeys } from '../../common/enums/cookie.enum';
-import { OtpCookieOptions } from '../../common/utils/cookie.util';
 import { PublicMessage } from '../../common/enums/message.enum';
 import { CheckOtpDto } from '../auth/dto/auth.dto';
+import { OtpCookieOptions } from '../../common/utils/functions.util';
 
 @Controller('user')
 @ApiTags('User')
