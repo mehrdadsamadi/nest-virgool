@@ -1,8 +1,8 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BlogEntity } from './entities/blog.entity';
-import { Repository } from 'typeorm';
-import { CreateBlogDto } from './dto/blog.dto';
+import { FindOptionsWhere, Repository } from 'typeorm';
+import { CreateBlogDto, FilterBlogDto } from './dto/blog.dto';
 import { generateSlug, randomId } from '../../common/utils/functions.util';
 import { BlogStatus } from './enum/status.enum';
 import { REQUEST } from '@nestjs/core';
@@ -13,19 +13,31 @@ import {
   paginationGenerator,
   paginationSolver,
 } from '../../common/utils/pagination.util';
+import { CategoryService } from '../category/category.service';
+import { BlogCategoryEntity } from './entities/blog-category.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BlogService {
   constructor(
     @InjectRepository(BlogEntity)
     private blogRepository: Repository<BlogEntity>,
+    @InjectRepository(BlogCategoryEntity)
+    private blogCategoryRepository: Repository<BlogCategoryEntity>,
     @Inject(REQUEST) private request: Request,
+    private categoryService: CategoryService,
   ) {}
 
   async create(blogDto: CreateBlogDto) {
-    let { title, slug, content, description, image, studyTime } = blogDto;
-
     const { id: userId } = this.request.user!;
+
+    let { title, slug, content, description, image, studyTime, categories } =
+      blogDto;
+
+    if (!categories) {
+      categories = [];
+    } else if (!Array.isArray(categories)) {
+      categories = categories.split(',');
+    }
 
     const tempSlug = slug ?? title;
     slug = generateSlug(tempSlug);
@@ -35,7 +47,7 @@ export class BlogService {
       slug = `${slug}-${randomId()}`;
     }
 
-    const blog = this.blogRepository.create({
+    let blog = this.blogRepository.create({
       title,
       slug,
       content,
@@ -46,7 +58,19 @@ export class BlogService {
       authorId: userId,
     });
 
-    await this.blogRepository.save(blog);
+    blog = await this.blogRepository.save(blog);
+
+    for (const categoryTitle of categories) {
+      let category = await this.categoryService.findOneByTitle(categoryTitle);
+      if (!category) {
+        category = await this.categoryService.insertByTitle(categoryTitle);
+      }
+
+      await this.blogCategoryRepository.insert({
+        blogId: blog.id,
+        categoryId: category.id,
+      });
+    }
 
     return {
       message: PublicMessage.Created,
@@ -64,11 +88,37 @@ export class BlogService {
     });
   }
 
-  async blogsList(paginationDto: PaginationDto) {
+  async blogsList(paginationDto: PaginationDto, filterDto: FilterBlogDto) {
     const { limit, skip, page } = paginationSolver(paginationDto);
 
+    const { category } = filterDto;
+
+    const where: FindOptionsWhere<BlogEntity> = {};
+
+    if (category) {
+      where['categories'] = {
+        category: {
+          title: category,
+        },
+      };
+    }
+
     const [blogs, count] = await this.blogRepository.findAndCount({
-      where: {},
+      relations: {
+        categories: {
+          category: true,
+        },
+      },
+      where,
+      select: {
+        categories: {
+          id: true,
+          category: {
+            id: true,
+            title: true,
+          },
+        },
+      },
       order: {
         id: 'DESC',
       },
