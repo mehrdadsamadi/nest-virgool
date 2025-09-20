@@ -1,13 +1,16 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BlogEntity } from './entities/blog.entity';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateBlogDto, FilterBlogDto } from './dto/blog.dto';
 import { generateSlug, randomId } from '../../common/utils/functions.util';
 import { BlogStatus } from './enum/status.enum';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { PublicMessage } from '../../common/enums/message.enum';
+import {
+  NotFoundMessage,
+  PublicMessage,
+} from '../../common/enums/message.enum';
 import { PaginationDto } from '../../common/dtos/pagination.dto';
 import {
   paginationGenerator,
@@ -15,6 +18,7 @@ import {
 } from '../../common/utils/pagination.util';
 import { CategoryService } from '../category/category.service';
 import { BlogCategoryEntity } from './entities/blog-category.entity';
+import { EntityNames } from '../../common/enums/entity.enum';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BlogService {
@@ -91,45 +95,119 @@ export class BlogService {
   async blogsList(paginationDto: PaginationDto, filterDto: FilterBlogDto) {
     const { limit, skip, page } = paginationSolver(paginationDto);
 
-    const { category } = filterDto;
+    let { category, search } = filterDto;
 
-    const where: FindOptionsWhere<BlogEntity> = {};
+    const qb = this.blogRepository
+      .createQueryBuilder(EntityNames.Blog)
+      .leftJoinAndSelect('blog.categories', 'categories')
+      .leftJoinAndSelect('categories.category', 'category');
 
     if (category) {
-      where['categories'] = {
-        category: {
-          title: category,
-        },
-      };
+      category = category.toLowerCase();
+
+      qb.andWhere('LOWER(category.title) = :category', { category });
     }
 
-    const [blogs, count] = await this.blogRepository.findAndCount({
-      relations: {
-        categories: {
-          category: true,
-        },
-      },
-      where,
-      select: {
-        categories: {
-          id: true,
-          category: {
-            id: true,
-            title: true,
-          },
-        },
-      },
-      order: {
-        id: 'DESC',
-      },
-      skip,
-      take: limit,
-    });
+    if (search) {
+      search = `%${search}%`;
+
+      qb.andWhere(
+        '(blog.title ILIKE :search OR blog.description ILIKE :search OR blog.content ILIKE :search)',
+        { search },
+      );
+    }
+
+    qb.orderBy('blog.id', 'DESC').skip(skip).take(limit).distinct(true); // برای جلوگیری از تکرار در صورت joins
+
+    const [blogs, count] = await qb.getManyAndCount();
+
+    const cleanBlogs = blogs.map((blog) => ({
+      ...blog,
+      categories: blog.categories.map((c) => ({
+        id: c.category.id,
+        title: c.category.title,
+      })),
+    }));
 
     return {
       pagination: paginationGenerator(count, page, limit),
-      blogs,
+      blogs: cleanBlogs,
     };
+
+    // let where = '';
+    //
+    // if (category) {
+    //   category = category.toLowerCase();
+    //
+    //   if (where.length > 0) where += ' AND ';
+    //
+    //   where += `LOWER(category.title) = :category`;
+    // }
+    //
+    // if (search) {
+    //   if (where.length > 0) where += ' AND ';
+    //
+    //   search = `%${search}%`;
+    //
+    //   where += `CONCAT(blog.title, blog.description, blog.content) ILIKE :search`;
+    // }
+    //
+    // const [blogs, count] = await this.blogRepository
+    //   .createQueryBuilder(EntityNames.Blog)
+    //   .leftJoin('blog.categories', 'categories')
+    //   .leftJoin('categories.category', 'category')
+    //   .addSelect(['categories.id', 'category.id', 'category.title'])
+    //   .where(where, { category, search })
+    //   .orderBy('blog.id', 'DESC')
+    //   .skip(skip)
+    //   .take(limit)
+    //   .getManyAndCount();
+
+    // const [blogs, count] = await this.blogRepository.findAndCount({
+    //   relations: {
+    //     categories: {
+    //       category: true,
+    //     },
+    //   },
+    //   where,
+    //   select: {
+    //     categories: {
+    //       id: true,
+    //       category: {
+    //         id: true,
+    //         title: true,
+    //       },
+    //     },
+    //   },
+    //   order: {
+    //     id: 'DESC',
+    //   },
+    //   skip,
+    //   take: limit,
+    // });
+  }
+
+  async delete(id: number) {
+    const { id: userId } = this.request.user!;
+
+    const blog = await this.checkExistBlogById(id);
+
+    if (blog.authorId !== userId)
+      throw new NotFoundException(NotFoundMessage.NotFound);
+
+    await this.blogRepository.delete(id);
+
+    return {
+      message: PublicMessage.Deleted,
+    };
+  }
+
+  async checkExistBlogById(id: number) {
+    const blog = await this.blogRepository.findOneBy({ id });
+
+    if (!blog) throw new NotFoundException(NotFoundMessage.NotFound);
+
+    return blog;
   }
 
   async checkBlogBySlug(slug: string) {

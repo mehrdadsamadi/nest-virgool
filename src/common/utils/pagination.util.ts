@@ -23,7 +23,7 @@ export function paginationGenerator(
   limit: number = 0,
 ) {
   return {
-    totalCount: count,
+    totalItemCount: count,
     page: +page,
     limit: +limit,
     pageCount: Math.ceil(count / limit),
