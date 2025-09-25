@@ -7,12 +7,19 @@ import { generateSlug, randomId } from '../../common/utils/functions.util';
 import { BlogStatus } from './enum/status.enum';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { NotFoundMessage, PublicMessage, } from '../../common/enums/message.enum';
+import {
+  NotFoundMessage,
+  PublicMessage,
+} from '../../common/enums/message.enum';
 import { PaginationDto } from '../../common/dtos/pagination.dto';
-import { paginationGenerator, paginationSolver, } from '../../common/utils/pagination.util';
+import {
+  paginationGenerator,
+  paginationSolver,
+} from '../../common/utils/pagination.util';
 import { CategoryService } from '../category/category.service';
 import { BlogCategoryEntity } from './entities/blog-category.entity';
 import { EntityNames } from '../../common/enums/entity.enum';
+import { BlogLikesEntity } from './entities/like.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BlogService {
@@ -21,6 +28,8 @@ export class BlogService {
     private blogRepository: Repository<BlogEntity>,
     @InjectRepository(BlogCategoryEntity)
     private blogCategoryRepository: Repository<BlogCategoryEntity>,
+    @InjectRepository(BlogLikesEntity)
+    private blogLikeRepository: Repository<BlogLikesEntity>,
     @Inject(REQUEST) private request: Request,
     private categoryService: CategoryService,
   ) {}
@@ -94,7 +103,11 @@ export class BlogService {
     const qb = this.blogRepository
       .createQueryBuilder(EntityNames.Blog)
       .leftJoinAndSelect('blog.categories', 'categories')
-      .leftJoinAndSelect('categories.category', 'category');
+      .leftJoinAndSelect('categories.category', 'category')
+      .leftJoin('blog.author', 'author')
+      .leftJoin('author.profile', 'profile')
+      .addSelect(['author.id', 'author.username', 'profile.nickName'])
+      .loadRelationCountAndMap('blog.likes', 'blog.likes');
 
     if (category) {
       category = category.toLowerCase();
@@ -216,6 +229,9 @@ export class BlogService {
 
     const blog = await this.checkExistBlogById(id);
 
+    if (blog.authorId !== userId)
+      throw new NotFoundException(NotFoundMessage.NotFound);
+
     if (!categories) {
       categories = [];
     } else if (!Array.isArray(categories)) {
@@ -265,6 +281,27 @@ export class BlogService {
 
     return {
       message: PublicMessage.Updated,
+    };
+  }
+
+  async likeToggle(blogId: number) {
+    const { id: userId } = this.request.user!;
+
+    await this.checkExistBlogById(blogId);
+
+    let message = PublicMessage.Like;
+
+    const isLiked = await this.blogLikeRepository.findOneBy({ userId, blogId });
+
+    if (isLiked) {
+      await this.blogLikeRepository.delete({ id: isLiked.id });
+      message = PublicMessage.Dislike;
+    } else {
+      await this.blogLikeRepository.insert({ userId, blogId });
+    }
+
+    return {
+      message,
     };
   }
 }

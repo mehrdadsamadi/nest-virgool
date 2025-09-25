@@ -27,6 +27,8 @@ export enum PublicMessage {
   Updated = 'با موفقیت ویرایش شد.',
   Deleted = 'با موفقیت حذف شد.',
   SentOpt = 'کد تایید ارسال شد.',
+  Like = 'با موفقیت لایک شد',
+  Dislike = 'لایک شما برداشته شد',
 }
 export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',
