@@ -8,6 +8,7 @@ import { CategoryService } from '../category/category.service';
 import { CategoryEntity } from '../category/entities/category.entity';
 import { BlogCategoryEntity } from './entities/blog-category.entity';
 import { BlogLikesEntity } from './entities/like.entity';
+import { BlogBookmarkEntity } from './entities/bookmark.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BlogLikesEntity } from './entities/like.entity';
       CategoryEntity,
       BlogCategoryEntity,
       BlogLikesEntity,
+      BlogBookmarkEntity,
     ]),
   ],
   controllers: [BlogController],

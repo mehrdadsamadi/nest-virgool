@@ -29,6 +29,8 @@ export enum PublicMessage {
   SentOpt = 'کد تایید ارسال شد.',
   Like = 'با موفقیت لایک شد',
   Dislike = 'لایک شما برداشته شد',
+  Bookmark = 'با موفقیت ذخیره شد',
+  UnBookmark = 'از لیست ذخیره ها برداشته شد',
 }
 export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',

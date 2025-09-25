@@ -20,6 +20,7 @@ import { CategoryService } from '../category/category.service';
 import { BlogCategoryEntity } from './entities/blog-category.entity';
 import { EntityNames } from '../../common/enums/entity.enum';
 import { BlogLikesEntity } from './entities/like.entity';
+import { BlogBookmarkEntity } from './entities/bookmark.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BlogService {
@@ -30,6 +31,8 @@ export class BlogService {
     private blogCategoryRepository: Repository<BlogCategoryEntity>,
     @InjectRepository(BlogLikesEntity)
     private blogLikeRepository: Repository<BlogLikesEntity>,
+    @InjectRepository(BlogBookmarkEntity)
+    private blogBookmarkRepository: Repository<BlogBookmarkEntity>,
     @Inject(REQUEST) private request: Request,
     private categoryService: CategoryService,
   ) {}
@@ -107,7 +110,8 @@ export class BlogService {
       .leftJoin('blog.author', 'author')
       .leftJoin('author.profile', 'profile')
       .addSelect(['author.id', 'author.username', 'profile.nickName'])
-      .loadRelationCountAndMap('blog.likes', 'blog.likes');
+      .loadRelationCountAndMap('blog.likes', 'blog.likes')
+      .loadRelationCountAndMap('blog.bookmarks', 'blog.bookmarks');
 
     if (category) {
       category = category.toLowerCase();
@@ -298,6 +302,30 @@ export class BlogService {
       message = PublicMessage.Dislike;
     } else {
       await this.blogLikeRepository.insert({ userId, blogId });
+    }
+
+    return {
+      message,
+    };
+  }
+
+  async bookmarkToggle(blogId: number) {
+    const { id: userId } = this.request.user!;
+
+    await this.checkExistBlogById(blogId);
+
+    let message = PublicMessage.Bookmark;
+
+    const isBookmark = await this.blogBookmarkRepository.findOneBy({
+      userId,
+      blogId,
+    });
+
+    if (isBookmark) {
+      await this.blogBookmarkRepository.delete({ id: isBookmark.id });
+      message = PublicMessage.UnBookmark;
+    } else {
+      await this.blogBookmarkRepository.insert({ userId, blogId });
     }
 
     return {
