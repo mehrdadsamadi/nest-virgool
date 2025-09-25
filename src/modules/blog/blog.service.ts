@@ -2,20 +2,14 @@ import { Inject, Injectable, NotFoundException, Scope } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BlogEntity } from './entities/blog.entity';
 import { Repository } from 'typeorm';
-import { CreateBlogDto, FilterBlogDto } from './dto/blog.dto';
+import { CreateBlogDto, FilterBlogDto, UpdateBlogDto } from './dto/blog.dto';
 import { generateSlug, randomId } from '../../common/utils/functions.util';
 import { BlogStatus } from './enum/status.enum';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import {
-  NotFoundMessage,
-  PublicMessage,
-} from '../../common/enums/message.enum';
+import { NotFoundMessage, PublicMessage, } from '../../common/enums/message.enum';
 import { PaginationDto } from '../../common/dtos/pagination.dto';
-import {
-  paginationGenerator,
-  paginationSolver,
-} from '../../common/utils/pagination.util';
+import { paginationGenerator, paginationSolver, } from '../../common/utils/pagination.util';
 import { CategoryService } from '../category/category.service';
 import { BlogCategoryEntity } from './entities/blog-category.entity';
 import { EntityNames } from '../../common/enums/entity.enum';
@@ -211,8 +205,66 @@ export class BlogService {
   }
 
   async checkBlogBySlug(slug: string) {
-    const blog = await this.blogRepository.findOneBy({ slug });
+    return await this.blogRepository.findOneBy({ slug });
+  }
 
-    return !!blog;
+  async update(id: number, blogDto: UpdateBlogDto) {
+    const { id: userId } = this.request.user!;
+
+    let { title, slug, content, description, image, studyTime, categories } =
+      blogDto;
+
+    const blog = await this.checkExistBlogById(id);
+
+    if (!categories) {
+      categories = [];
+    } else if (!Array.isArray(categories)) {
+      categories = categories.split(',');
+    }
+
+    let tempSlug: string | null = null;
+
+    if (title) {
+      tempSlug = title;
+      blog.title = title;
+    }
+
+    if (slug) tempSlug = slug;
+    if (tempSlug) {
+      slug = generateSlug(tempSlug);
+      const existSlug = await this.checkBlogBySlug(slug);
+      if (existSlug && existSlug.id !== id) {
+        slug = `${slug}-${randomId()}`;
+      }
+
+      blog.slug = slug;
+    }
+
+    if (description) blog.description = description;
+    if (content) blog.content = content;
+    if (image) blog.image = image;
+    if (studyTime) blog.studyTime = studyTime;
+
+    await this.blogRepository.save(blog);
+
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      await this.blogCategoryRepository.delete({ blogId: blog.id });
+    }
+
+    for (const categoryTitle of categories) {
+      let category = await this.categoryService.findOneByTitle(categoryTitle);
+      if (!category) {
+        category = await this.categoryService.insertByTitle(categoryTitle);
+      }
+
+      await this.blogCategoryRepository.insert({
+        blogId: blog.id,
+        categoryId: category.id,
+      });
+    }
+
+    return {
+      message: PublicMessage.Updated,
+    };
   }
 }
