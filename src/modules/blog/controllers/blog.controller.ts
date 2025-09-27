@@ -50,6 +50,11 @@ export class BlogController {
     return this.blogService.blogsList(paginationDto, filterDto);
   }
 
+  @Get('/by-slug/:slug')
+  getBySlug(@Param('slug') slug: string) {
+    return this.blogService.getBySlug(slug);
+  }
+
   @Get('/like/:id')
   likeToggle(@Param('id', ParseIntPipe) id: number) {
     return this.blogService.likeToggle(id);
