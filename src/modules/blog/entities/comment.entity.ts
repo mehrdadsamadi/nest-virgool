@@ -12,10 +12,7 @@ export class BlogCommentEntity extends BaseEntity {
   @Column({ default: true })
   accepted: boolean;
 
-  @Column()
-  content: string;
-
-  @Column()
+  @Column({ nullable: true })
   parentId: number;
 
   @ManyToOne(() => BlogCommentEntity, (blogComment) => blogComment.children, {

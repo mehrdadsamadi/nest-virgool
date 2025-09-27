@@ -10,16 +10,16 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { BlogService } from './blog.service';
-import { CreateBlogDto, FilterBlogDto, UpdateBlogDto } from './dto/blog.dto';
+import { BlogService } from '../services/blog.service';
+import { CreateBlogDto, FilterBlogDto, UpdateBlogDto } from '../dto/blog.dto';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { SwaggerConsumes } from '../../common/enums/swagger-consumes.enum';
-import { SwaggerAuthName } from '../../common/enums/swagger-auth-name.enum';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { Pagination } from '../../common/decorators/pagination.decorator';
-import { PaginationDto } from '../../common/dtos/pagination.dto';
-import { SkipAuth } from '../../common/decorators/skip-auth.decorator';
-import { FilterBlog } from '../../common/decorators/filter.decorator';
+import { SwaggerConsumes } from '../../../common/enums/swagger-consumes.enum';
+import { SwaggerAuthName } from '../../../common/enums/swagger-auth-name.enum';
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { Pagination } from '../../../common/decorators/pagination.decorator';
+import { PaginationDto } from '../../../common/dtos/pagination.dto';
+import { SkipAuth } from '../../../common/decorators/skip-auth.decorator';
+import { FilterBlog } from '../../../common/decorators/filter.decorator';
 
 @Controller('blog')
 @ApiTags('Blog')

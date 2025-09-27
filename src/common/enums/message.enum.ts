@@ -31,6 +31,7 @@ export enum PublicMessage {
   Dislike = 'لایک شما برداشته شد',
   Bookmark = 'با موفقیت ذخیره شد',
   UnBookmark = 'از لیست ذخیره ها برداشته شد',
+  CreatedComment = 'نظر شما با موفقیت ثبت شد',
 }
 export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',
