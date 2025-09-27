@@ -111,7 +111,13 @@ export class BlogService {
       .leftJoin('author.profile', 'profile')
       .addSelect(['author.id', 'author.username', 'profile.nickName'])
       .loadRelationCountAndMap('blog.likes', 'blog.likes')
-      .loadRelationCountAndMap('blog.bookmarks', 'blog.bookmarks');
+      .loadRelationCountAndMap('blog.bookmarks', 'blog.bookmarks')
+      .loadRelationCountAndMap(
+        'blog.comments',
+        'blog.comments',
+        'comments',
+        (qb) => qb.where('comments.accepted = :accepted', { accepted: true }),
+      );
 
     if (category) {
       category = category.toLowerCase();

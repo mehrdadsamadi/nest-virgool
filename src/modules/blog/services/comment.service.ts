@@ -1,4 +1,10 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  Scope,
+} from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { CreateBlogCommentDto } from '../dto/comment.dto';
@@ -7,7 +13,16 @@ import { BlogEntity } from '../entities/blog.entity';
 import { Repository } from 'typeorm';
 import { BlogCommentEntity } from '../entities/comment.entity';
 import { BlogService } from './blog.service';
-import { PublicMessage } from '../../../common/enums/message.enum';
+import {
+  BadRequestMessage,
+  NotFoundMessage,
+  PublicMessage,
+} from '../../../common/enums/message.enum';
+import { PaginationDto } from '../../../common/dtos/pagination.dto';
+import {
+  paginationGenerator,
+  paginationSolver,
+} from '../../../common/utils/pagination.util';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BlogCommentService {
@@ -45,6 +60,82 @@ export class BlogCommentService {
 
     return {
       message: PublicMessage.CreatedComment,
+    };
+  }
+
+  async blogCommentsList(paginationDto: PaginationDto) {
+    const { limit, skip, page } = paginationSolver(paginationDto);
+
+    const [blogComments, count] = await this.blogCommentRepository.findAndCount(
+      {
+        where: {},
+        relations: {
+          blog: true,
+          parent: true,
+          user: {
+            profile: true,
+          },
+        },
+        select: {
+          blog: {
+            title: true,
+          },
+          user: {
+            username: true,
+            profile: {
+              nickName: true,
+            },
+          },
+        },
+        order: {
+          id: 'DESC',
+        },
+        skip,
+        take: limit,
+      },
+    );
+
+    return {
+      pagination: paginationGenerator(count, page, limit),
+      comments: blogComments,
+    };
+  }
+
+  async checkExistCommentById(id: number) {
+    const comment = await this.blogCommentRepository.findOneBy({ id });
+
+    if (!comment) throw new NotFoundException(NotFoundMessage.NotFound);
+
+    return comment;
+  }
+
+  async accept(commentId: number) {
+    const comment = await this.checkExistCommentById(commentId);
+
+    if (comment.accepted)
+      throw new BadRequestException(BadRequestMessage.AlreadyAcceptedComment);
+
+    comment.accepted = true;
+
+    await this.blogCommentRepository.save(comment);
+
+    return {
+      message: PublicMessage.Updated,
+    };
+  }
+
+  async reject(commentId: number) {
+    const comment = await this.checkExistCommentById(commentId);
+
+    if (!comment.accepted)
+      throw new BadRequestException(BadRequestMessage.AlreadyRejectedComment);
+
+    comment.accepted = false;
+
+    await this.blogCommentRepository.save(comment);
+
+    return {
+      message: PublicMessage.Updated,
     };
   }
 }
