@@ -21,6 +21,7 @@ import { BlogCategoryEntity } from '../entities/blog-category.entity';
 import { EntityNames } from '../../../common/enums/entity.enum';
 import { BlogLikesEntity } from '../entities/like.entity';
 import { BlogBookmarkEntity } from '../entities/bookmark.entity';
+import { BlogCommentService } from './comment.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BlogService {
@@ -35,6 +36,7 @@ export class BlogService {
     private blogBookmarkRepository: Repository<BlogBookmarkEntity>,
     @Inject(REQUEST) private request: Request,
     private categoryService: CategoryService,
+    private blogCommentService: BlogCommentService,
   ) {}
 
   async create(blogDto: CreateBlogDto) {
@@ -339,8 +341,8 @@ export class BlogService {
     };
   }
 
-  async getBySlug(slug: string) {
-    const { id: userId } = this.request.user!;
+  async getBySlug(slug: string, paginationDto: PaginationDto) {
+    const userId = this.request?.user?.id;
 
     const blog = await this.blogRepository
       .createQueryBuilder(EntityNames.Blog)
@@ -352,35 +354,43 @@ export class BlogService {
       .addSelect(['author.id', 'author.username', 'profile.nickName'])
       .loadRelationCountAndMap('blog.likes', 'blog.likes')
       .loadRelationCountAndMap('blog.bookmarks', 'blog.bookmarks')
-      .leftJoinAndSelect(
-        'blog.comments',
-        'comments',
-        'comments.accepted = :accepted',
-        { accepted: true },
-      )
       .distinct(true)
       .getOne();
 
     if (!blog) throw new NotFoundException(NotFoundMessage.NotFound);
 
-    const isLiked = !!(await this.blogLikeRepository.findOneBy({
-      userId,
-      blogId: blog.id,
-    }));
+    const commentsData = await this.blogCommentService.findCommentsOfBlogById(
+      blog.id,
+      paginationDto,
+    );
 
-    const isBookmarked = !!(await this.blogBookmarkRepository.findOneBy({
-      userId,
-      blogId: blog.id,
-    }));
+    let isLiked = false;
+
+    let isBookmarked = false;
+
+    if (userId && !isNaN(userId) && userId > 0) {
+      isLiked = !!(await this.blogLikeRepository.findOneBy({
+        userId,
+        blogId: blog.id,
+      }));
+
+      isBookmarked = !!(await this.blogBookmarkRepository.findOneBy({
+        userId,
+        blogId: blog.id,
+      }));
+    }
 
     return {
-      ...blog,
-      categories: blog.categories.map((c) => ({
-        id: c.category.id,
-        title: c.category.title,
-      })),
-      isLiked,
-      isBookmarked,
+      blog: {
+        ...blog,
+        categories: blog.categories.map((c) => ({
+          id: c.category.id,
+          title: c.category.title,
+        })),
+        isLiked,
+        isBookmarked,
+      },
+      commentsData,
     };
   }
 }

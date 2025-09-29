@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  forwardRef,
   Inject,
   Injectable,
   NotFoundException,
@@ -32,6 +33,7 @@ export class BlogCommentService {
     @InjectRepository(BlogCommentEntity)
     private blogCommentRepository: Repository<BlogCommentEntity>,
     @Inject(REQUEST) private request: Request,
+    @Inject(forwardRef(() => BlogService))
     private blogService: BlogService,
   ) {}
 
@@ -71,7 +73,6 @@ export class BlogCommentService {
         where: {},
         relations: {
           blog: true,
-          parent: true,
           user: {
             profile: true,
           },
@@ -84,6 +85,79 @@ export class BlogCommentService {
             username: true,
             profile: {
               nickName: true,
+            },
+          },
+        },
+        order: {
+          id: 'DESC',
+        },
+        skip,
+        take: limit,
+      },
+    );
+
+    return {
+      pagination: paginationGenerator(count, page, limit),
+      comments: blogComments,
+    };
+  }
+
+  async findCommentsOfBlogById(blogId: number, paginationDto: PaginationDto) {
+    const { limit, skip, page } = paginationSolver(paginationDto);
+
+    const [blogComments, count] = await this.blogCommentRepository.findAndCount(
+      {
+        where: {
+          blogId,
+          parentId: undefined,
+        },
+        relations: {
+          blog: true,
+          user: {
+            profile: true,
+          },
+          children: {
+            user: {
+              profile: true,
+            },
+            children: {
+              user: {
+                profile: true,
+              },
+            },
+          },
+        },
+        select: {
+          user: {
+            username: true,
+            profile: {
+              nickName: true,
+            },
+          },
+          children: {
+            id: true,
+            text: true,
+            createdAt: true,
+            updatedAt: true,
+            accepted: true,
+            user: {
+              username: true,
+              profile: {
+                nickName: true,
+              },
+            },
+            children: {
+              id: true,
+              text: true,
+              createdAt: true,
+              updatedAt: true,
+              accepted: true,
+              user: {
+                username: true,
+                profile: {
+                  nickName: true,
+                },
+              },
             },
           },
         },

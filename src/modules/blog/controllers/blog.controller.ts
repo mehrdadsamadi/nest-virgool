@@ -51,8 +51,13 @@ export class BlogController {
   }
 
   @Get('/by-slug/:slug')
-  getBySlug(@Param('slug') slug: string) {
-    return this.blogService.getBySlug(slug);
+  @SkipAuth()
+  @Pagination()
+  getBySlug(
+    @Param('slug') slug: string,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.blogService.getBySlug(slug, paginationDto);
   }
 
   @Get('/like/:id')
