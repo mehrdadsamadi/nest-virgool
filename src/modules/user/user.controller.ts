@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -9,7 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
   ChangeEmailDto,
   ChangePhoneDto,
@@ -57,6 +59,17 @@ export class UserController {
   @Get('/profile')
   profile() {
     return this.userService.profile();
+  }
+
+  @Get('/list')
+  list() {
+    return this.userService.list();
+  }
+
+  @Get('/follow/:followingId')
+  @ApiParam({ name: 'followingId' })
+  followToggle(@Param('followingId', ParseIntPipe) followingId: number) {
+    return this.userService.followToggle(followingId);
   }
 
   @Patch('/change-email')

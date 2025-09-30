@@ -26,6 +26,7 @@ import { TokenService } from '../auth/tokens.service';
 import { OtpEntity } from './entities/otp.entity';
 import { CookieKeys } from '../../common/enums/cookie.enum';
 import { AuthMethod } from '../auth/enums/method.enum';
+import { FollowEntity } from './entities/follow.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UserService {
@@ -36,6 +37,8 @@ export class UserService {
     private profileRepository: Repository<ProfileEntity>,
     @InjectRepository(OtpEntity)
     private otpRepository: Repository<OtpEntity>,
+    @InjectRepository(FollowEntity)
+    private followRepository: Repository<FollowEntity>,
     @Inject(REQUEST) private request: Request,
     private authService: AuthService,
     private tokenService: TokenService,
@@ -256,5 +259,35 @@ export class UserService {
       throw new BadRequestException(AuthMessage.IncorrectOtpCode);
 
     return otp;
+  }
+
+  async list() {
+    return this.userRepository.find({});
+  }
+
+  async followToggle(followingId: number) {
+    const { id: userId } = this.request.user!;
+
+    const following = await this.userRepository.findOneBy({ id: followingId });
+    if (!following) throw new BadRequestException(NotFoundMessage.User);
+
+    const isFollowing = await this.followRepository.findOneBy({
+      followingId,
+      followerId: userId,
+    });
+
+    let message = PublicMessage.Followed;
+
+    if (isFollowing) {
+      await this.followRepository.remove(isFollowing);
+      message = PublicMessage.UnFollowed;
+    } else {
+      await this.followRepository.insert({
+        followingId,
+        followerId: userId,
+      });
+    }
+
+    return { message };
   }
 }

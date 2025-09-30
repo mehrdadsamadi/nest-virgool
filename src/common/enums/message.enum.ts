@@ -17,6 +17,7 @@ export enum AuthMessage {
 export enum NotFoundMessage {
   NotFound = 'موردی یافت نشد.',
   Category = 'دسته بندی یافت نشد.',
+  User = 'کاربری یافت نشد',
 }
 export enum ValidationMessage {
   InvalidImageFormat = 'فرمت تصویر بارگذاری شده باید از نوع jpg , png باشد.',
@@ -34,6 +35,8 @@ export enum PublicMessage {
   Bookmark = 'با موفقیت ذخیره شد',
   UnBookmark = 'از لیست ذخیره ها برداشته شد',
   CreatedComment = 'نظر شما با موفقیت ثبت شد',
+  Followed = 'دنبال شد',
+  UnFollowed = 'از لیست دنبال شوندگان حذف شد',
 }
 export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',
