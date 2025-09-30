@@ -27,6 +27,7 @@ import { CookieKeys } from '../../common/enums/cookie.enum';
 import { AuthResponse } from './types/response';
 import { REQUEST } from '@nestjs/core';
 import { OtpCookieOptions } from '../../common/utils/functions.util';
+import { KavenegarService } from '../http/kavenegar.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService {
@@ -39,6 +40,7 @@ export class AuthService {
     private otpRepository: Repository<OtpEntity>,
     @Inject(REQUEST) private request: Request,
     private tokenService: TokenService,
+    private kavenegarService: KavenegarService,
   ) {}
   async userExistence(authDto: AuthDto, res: Response) {
     const { type, method, username } = authDto;
@@ -48,10 +50,12 @@ export class AuthService {
     switch (type) {
       case AuthType.Login:
         result = await this.login(method, username);
+        await this.sendOtp(method, username, result.code);
         break;
 
       case AuthType.Register:
         result = await this.register(method, username);
+        await this.sendOtp(method, username, result.code);
         break;
 
       default:
@@ -115,6 +119,14 @@ export class AuthService {
       message: PublicMessage.SentOpt,
       code,
     });
+  }
+
+  async sendOtp(method: AuthMethod, username: string, code: string) {
+    if (method === AuthMethod.Phone) {
+      await this.kavenegarService.sendVerificationSms(username, code);
+    } else if (method === AuthMethod.Email) {
+      // send email
+    }
   }
 
   async saveOtp(userId: number, method: AuthMethod) {

@@ -8,11 +8,15 @@ import { BlogLikesEntity } from '../../blog/entities/like.entity';
 import { BlogBookmarkEntity } from '../../blog/entities/bookmark.entity';
 import { BlogCommentEntity } from '../../blog/entities/comment.entity';
 import { ImageEntity } from '../../image/entities/image.entity';
+import { Roles } from '../../../common/enums/role.enum';
 
 @Entity(EntityNames.User)
 export class UserEntity extends BaseEntity {
   @Column({ unique: true, nullable: true })
   username: string;
+
+  @Column({ default: Roles.User, enum: Roles })
+  role: Roles;
 
   @Column({ unique: true, nullable: true })
   phone: string;

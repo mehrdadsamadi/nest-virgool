@@ -10,11 +10,14 @@ namespace NodeJS {
     DB_HOST: string;
     DB_PASSWORD: string;
 
-    //secrets
+    //Secrets
     COOKIE_SECRET: string;
     OTP_TOKEN_SECRET: string;
     ACCESS_TOKEN_SECRET: string;
     EMAIL_TOKEN_SECRET: string;
     PHONE_TOKEN_SECRET: string;
+
+    //Kavenegar
+    SEND_SMS_URL: string;
   }
 }
