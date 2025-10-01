@@ -19,5 +19,9 @@ namespace NodeJS {
 
     //Kavenegar
     SEND_SMS_URL: string;
+
+    //Oauth
+    GOOGLE_CLIENT_ID: string;
+    GOOGLE_CLIENT_SECRET: string;
   }
 }
