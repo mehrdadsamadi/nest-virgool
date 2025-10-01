@@ -13,6 +13,7 @@ export enum AuthMessage {
   LoginAgain = 'مجددا وارد حساب کاربری خود شوید.',
   IncorrectOtpCode = 'کد وارد شده صحیح نمیباشد.',
   RequiredLogin = 'وارد حساب کاربری خود شوید.',
+  Blocked = 'حساب کاربری شما مسدود میباشد لطفا با پشتیبانی در ارتباط باشید',
 }
 export enum NotFoundMessage {
   NotFound = 'موردی یافت نشد.',
@@ -37,6 +38,8 @@ export enum PublicMessage {
   CreatedComment = 'نظر شما با موفقیت ثبت شد',
   Followed = 'دنبال شد',
   UnFollowed = 'از لیست دنبال شوندگان حذف شد',
+  UserBlocked = 'حساب کاربری با موفقیت مسدود شد',
+  UserUnBlocked = 'حساب کاربری از حالت مسدود خارج شد',
 }
 export enum ConflictMessage {
   Category = 'عنوان دسته بندی قبلا ثبت شده است.',

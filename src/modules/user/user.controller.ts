@@ -27,11 +27,13 @@ import { UploadedOptionalFiles } from '../../common/decorators/upload-file.decor
 import { Response } from 'express';
 import { CookieKeys } from '../../common/enums/cookie.enum';
 import { PublicMessage } from '../../common/enums/message.enum';
-import { CheckOtpDto } from '../auth/dto/auth.dto';
+import { CheckOtpDto, UserBlockDto } from '../auth/dto/auth.dto';
 import { OtpCookieOptions } from '../../common/utils/functions.util';
 import { AuthDecorator } from '../../common/decorators/auth.decorator';
 import { Pagination } from '../../common/decorators/pagination.decorator';
 import { PaginationDto } from '../../common/dtos/pagination.dto';
+import { CanAccess } from '../../common/decorators/role.decorator';
+import { Roles } from '../../common/enums/role.enum';
 
 @Controller('user')
 @ApiTags('User')
@@ -136,6 +138,13 @@ export class UserController {
   @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
   async verifyPhone(@Body() otpDto: CheckOtpDto) {
     return this.userService.verifyPhone(otpDto.code);
+  }
+
+  @Post('/block')
+  @CanAccess(Roles.Admin)
+  @ApiConsumes(SwaggerConsumes.UrlEncoded, SwaggerConsumes.Json)
+  async blockToggle(@Body() blockDto: UserBlockDto) {
+    return this.userService.blockToggle(blockDto);
   }
 
   @Patch('/change-username')

@@ -10,6 +10,7 @@ import { BlogCommentEntity } from '../../blog/entities/comment.entity';
 import { ImageEntity } from '../../image/entities/image.entity';
 import { Roles } from '../../../common/enums/role.enum';
 import { FollowEntity } from './follow.entity';
+import { UserStatus } from '../enum/status.enum';
 
 @Entity(EntityNames.User)
 export class UserEntity extends BaseEntity {
@@ -18,6 +19,9 @@ export class UserEntity extends BaseEntity {
 
   @Column({ default: Roles.User, enum: Roles })
   role: Roles;
+
+  @Column({ default: UserStatus.ACTIVE, enum: UserStatus })
+  status: UserStatus;
 
   @Column({ unique: true, nullable: true })
   phone: string;

@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
   Scope,
 } from '@nestjs/common';
 import { CreateProfileDto } from './dto/create-profile.dto';
@@ -33,6 +34,8 @@ import {
   paginationGenerator,
   paginationSolver,
 } from '../../common/utils/pagination.util';
+import { UserBlockDto } from '../auth/dto/auth.dto';
+import { UserStatus } from './enum/status.enum';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UserService {
@@ -386,6 +389,31 @@ export class UserService {
         followingId,
         followerId: userId,
       });
+    }
+
+    return { message };
+  }
+
+  async blockToggle(blockDto: UserBlockDto) {
+    const { userId } = blockDto;
+
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException(NotFoundMessage.User);
+
+    let message = PublicMessage.UserBlocked;
+
+    if (user.status === UserStatus.BLOCK) {
+      message = PublicMessage.UserUnBlocked;
+
+      await this.userRepository.update(
+        { id: userId },
+        { status: UserStatus.ACTIVE },
+      );
+    } else {
+      await this.userRepository.update(
+        { id: userId },
+        { status: UserStatus.BLOCK },
+      );
     }
 
     return { message };
