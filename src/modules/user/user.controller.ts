@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Res,
   UseInterceptors,
 } from '@nestjs/common';
@@ -29,6 +30,8 @@ import { PublicMessage } from '../../common/enums/message.enum';
 import { CheckOtpDto } from '../auth/dto/auth.dto';
 import { OtpCookieOptions } from '../../common/utils/functions.util';
 import { AuthDecorator } from '../../common/decorators/auth.decorator';
+import { Pagination } from '../../common/decorators/pagination.decorator';
+import { PaginationDto } from '../../common/dtos/pagination.dto';
 
 @Controller('user')
 @ApiTags('User')
@@ -61,9 +64,22 @@ export class UserController {
     return this.userService.profile();
   }
 
+  @Get('/followers')
+  @Pagination()
+  followers(@Query() paginationDto: PaginationDto) {
+    return this.userService.followers(paginationDto);
+  }
+
+  @Get('/followings')
+  @Pagination()
+  followings(@Query() paginationDto: PaginationDto) {
+    return this.userService.followings(paginationDto);
+  }
+
   @Get('/list')
-  list() {
-    return this.userService.list();
+  @Pagination()
+  list(@Query() paginationDto: PaginationDto) {
+    return this.userService.list(paginationDto);
   }
 
   @Get('/follow/:followingId')

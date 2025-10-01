@@ -8,16 +8,16 @@ export class FollowEntity extends BaseEntity {
   @Column()
   followingId: number;
 
-  @ManyToOne(() => UserEntity, (user) => user.followings, {
+  @ManyToOne(() => UserEntity, (user) => user.followers, {
     onDelete: 'CASCADE',
   })
-  followings: UserEntity;
+  following: UserEntity;
 
   @Column()
   followerId: number;
 
-  @ManyToOne(() => UserEntity, (user) => user.followers, {
+  @ManyToOne(() => UserEntity, (user) => user.followings, {
     onDelete: 'CASCADE',
   })
-  followers: UserEntity;
+  follower: UserEntity;
 }

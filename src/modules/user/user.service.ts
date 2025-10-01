@@ -27,6 +27,12 @@ import { OtpEntity } from './entities/otp.entity';
 import { CookieKeys } from '../../common/enums/cookie.enum';
 import { AuthMethod } from '../auth/enums/method.enum';
 import { FollowEntity } from './entities/follow.entity';
+import { EntityNames } from '../../common/enums/entity.enum';
+import { PaginationDto } from '../../common/dtos/pagination.dto';
+import {
+  paginationGenerator,
+  paginationSolver,
+} from '../../common/utils/pagination.util';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UserService {
@@ -109,13 +115,16 @@ export class UserService {
     };
   }
 
-  async profile() {
+  profile() {
     const { id } = this.request.user!;
 
-    return await this.userRepository.findOne({
-      where: { id },
-      relations: ['profile'],
-    });
+    return this.userRepository
+      .createQueryBuilder(EntityNames.User)
+      .where({ id })
+      .leftJoinAndSelect('user.profile', 'profile')
+      .loadRelationCountAndMap('user.followers', 'user.followers')
+      .loadRelationCountAndMap('user.followings', 'user.followings')
+      .getOne();
   }
 
   async changeEmail(email: string) {
@@ -261,8 +270,99 @@ export class UserService {
     return otp;
   }
 
-  async list() {
-    return this.userRepository.find({});
+  async list(paginationDto: PaginationDto) {
+    const { limit, skip, page } = paginationSolver(paginationDto);
+
+    const [users, count] = await this.userRepository.findAndCount({
+      take: limit,
+      skip,
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return {
+      users,
+      pagination: paginationGenerator(count, page, limit),
+    };
+  }
+
+  async followers(paginationDto: PaginationDto) {
+    const { limit, skip, page } = paginationSolver(paginationDto);
+
+    const userId = this.request.user?.id;
+
+    const [followers, count] = await this.followRepository.findAndCount({
+      where: { followingId: userId },
+      relations: {
+        follower: {
+          profile: true,
+        },
+      },
+      select: {
+        id: true,
+        follower: {
+          id: true,
+          username: true,
+          profile: {
+            id: true,
+            nickName: true,
+            bio: true,
+            imageProfile: true,
+            bgImage: true,
+          },
+        },
+      },
+      take: limit,
+      skip,
+      // order: {
+      //   createdAt: 'DESC',
+      // },
+    });
+
+    return {
+      followers,
+      pagination: paginationGenerator(count, page, limit),
+    };
+  }
+
+  async followings(paginationDto: PaginationDto) {
+    const { limit, skip, page } = paginationSolver(paginationDto);
+
+    const userId = this.request.user?.id;
+
+    const [followings, count] = await this.followRepository.findAndCount({
+      where: { followerId: userId },
+      relations: {
+        following: {
+          profile: true,
+        },
+      },
+      select: {
+        id: true,
+        following: {
+          id: true,
+          username: true,
+          profile: {
+            id: true,
+            nickName: true,
+            bio: true,
+            imageProfile: true,
+            bgImage: true,
+          },
+        },
+      },
+      take: limit,
+      skip,
+      // order: {
+      //   createdAt: 'DESC',
+      // },
+    });
+
+    return {
+      followings,
+      pagination: paginationGenerator(count, page, limit),
+    };
   }
 
   async followToggle(followingId: number) {
