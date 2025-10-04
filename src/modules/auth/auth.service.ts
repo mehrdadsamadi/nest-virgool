@@ -24,7 +24,7 @@ import { randomInt } from 'crypto';
 import { TokenService } from './tokens.service';
 import { Request, Response } from 'express';
 import { CookieKeys } from '../../common/enums/cookie.enum';
-import { AuthResponse } from './types/response';
+import { AuthResponse, GoogleUser } from './types/response';
 import { REQUEST } from '@nestjs/core';
 import { OtpCookieOptions } from '../../common/utils/functions.util';
 import { KavenegarService } from '../http/kavenegar.service';
@@ -106,6 +106,40 @@ export class AuthService {
 
     return {
       code: otp.code,
+      token: otpToken,
+    };
+  }
+
+  async googleAuth(userData: GoogleUser) {
+    const { email, firstName, lastName } = userData;
+
+    let otpToken: string;
+
+    let user = await this.userRepository.findOneBy({ email });
+    if (user) {
+      otpToken = this.tokenService.generateOtpToken({ userId: user.id });
+    } else {
+      user = this.userRepository.create({
+        email,
+        verifyEmail: true,
+      });
+
+      user = await this.userRepository.save(user);
+      user.username = `m_${user.id}`;
+
+      let profile = this.profileRepository.create({
+        userId: user.id,
+        nickName: `${firstName} ${lastName}`,
+      });
+      profile = await this.profileRepository.save(profile);
+      user.profileId = profile.id;
+
+      await this.userRepository.save(user);
+
+      otpToken = this.tokenService.generateAccessToken({ userId: user.id });
+    }
+
+    return {
       token: otpToken,
     };
   }
